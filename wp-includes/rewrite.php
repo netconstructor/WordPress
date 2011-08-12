@@ -1977,9 +1977,9 @@ class WP_Rewrite {
 				if ( preg_match("#^$match#", $request_match, $matches) ||
 					 preg_match("#^$match#", urldecode($request_match), $matches) ) {
 
-						if ( $this->use_verbose_page_rules == true && preg_match( '/pagename=\$([^&\[]+)\[([0-9]+)\]/', $query, $varmatch ) ) {
+						if ( $this->use_verbose_page_rules == true && preg_match( '/pagename=\$matches\[([0-9]+)\]/', $query, $varmatch ) ) {
 							// this is a verbose page match, lets check to be sure about it
-							if ( ! get_page_by_path(${$varmatch[1]}[$varmatch[2]]) )
+							if ( ! get_page_by_path( $matches[ $varmatch[1] ] ) )
 								continue;
 						}
 
