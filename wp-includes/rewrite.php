@@ -304,28 +304,9 @@ function url_to_postid($url) {
 	$request = $url;
 
 	// Look for matches.
-	$request_match = $request;
-	foreach ( (array)$rewrite as $match => $query) {
-
-		// If the requesting file is the anchor of the match, prepend it
-		// to the path info.
-		if ( !empty($url) && ($url != $request) && (strpos($match, $url) === 0) )
-			$request_match = $url . '/' . $request;
-
-		if ( preg_match("!^$match!", $request_match, $matches) ) {
-
-			if ( $wp_rewrite->use_verbose_page_rules && preg_match( '/pagename=\$([^&\[]+)\[([0-9]+)\]/', $query, $varmatch ) ) {
-				// this is a verbose page match, lets check to be sure about it
-				if ( ! get_page_by_path( ${$varmatch[1]}[$varmatch[2]] ) )
-					continue;
-			}
-
-			// Got a match.
-			// Trim the query of everything up to the '?'.
-			$query = preg_replace("!^.+\?!", '', $query);
-
-			// Substitute the substring matches into the query.
-			$query = addslashes(WP_MatchesMapRegex::apply($query, $matches));
+	$result = $wp_rewrite->find_match( $request, $url, $rewrite );
+	if ( $result ) {
+			list( $match, $query ) = $result;
 
 			// Filter out non-public query vars
 			global $wp;
@@ -342,7 +323,6 @@ function url_to_postid($url) {
 				return $query->post->ID;
 			else
 				return 0;
-		}
 	}
 	return 0;
 }
@@ -1968,6 +1948,59 @@ class WP_Rewrite {
 	 */
 	function __construct() {
 		$this->init();
+	}
+
+	/**
+	 * Go through a list of rewrite rules and find a match
+	 *
+	 * @since 3.3.0
+	 * @access private
+	 */
+	function find_match( $request, $req_uri, $rewrite ) {
+		$found = false;
+
+		$request_match = $request;
+		if ( empty( $req_uri ) ) {
+			// An empty request could only match against ^$ regex
+			if ( isset( $rewrite['$'] ) ) {
+				$match = '$';
+				$query = $rewrite['$'];
+				$matches = array('');
+				$found = true;
+			}
+		} else if ( $req_uri != 'wp-app.php' ) {
+			foreach ( (array) $rewrite as $match => $query ) {
+				// If the requesting file is the anchor of the match, prepend it to the path info.
+				if ( ! empty($req_uri) && strpos($match, $req_uri) === 0 && $req_uri != $request )
+					$request_match = $req_uri . '/' . $request;
+
+				if ( preg_match("#^$match#", $request_match, $matches) ||
+					 preg_match("#^$match#", urldecode($request_match), $matches) ) {
+
+						if ( $this->use_verbose_page_rules == true && preg_match( '/pagename=\$([^&\[]+)\[([0-9]+)\]/', $query, $varmatch ) ) {
+							// this is a verbose page match, lets check to be sure about it
+							if ( ! get_page_by_path(${$varmatch[1]}[$varmatch[2]]) )
+								continue;
+						}
+
+						// Got a match.
+						$found = true;
+						break;
+				}
+			}
+		}
+
+		if ( $found ) {
+			// Trim the query of everything up to the '?'.
+			$query = preg_replace("!^.+\?!", '', $query);
+
+			// Substitute the substring matches into the query.
+			$query = addslashes(WP_MatchesMapRegex::apply($query, $matches));
+
+			return array( $match, $query );
+		}
+
+		return false;
 	}
 }
 

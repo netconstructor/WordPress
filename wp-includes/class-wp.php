@@ -184,47 +184,12 @@ class WP {
 			$this->request = $request;
 
 			// Look for matches.
-			$request_match = $request;
-			if ( empty( $req_uri ) ) {
-				// An empty request could only match against ^$ regex
-				if ( isset( $rewrite['$'] ) ) {
-					$this->matched_rule = '$';
-					$query = $rewrite['$'];
-					$matches = array('');
-				}
-			} else if ( $req_uri != 'wp-app.php' ) {
-				foreach ( (array) $rewrite as $match => $query ) {
-					// If the requesting file is the anchor of the match, prepend it to the path info.
-					if ( ! empty($req_uri) && strpos($match, $req_uri) === 0 && $req_uri != $request )
-						$request_match = $req_uri . '/' . $request;
+			$result = $wp_rewrite->find_match( $request, $req_uri, $rewrite );
 
-					if ( preg_match("#^$match#", $request_match, $matches) ||
-						preg_match("#^$match#", urldecode($request_match), $matches) ) {
+			if ( $result ) {
+				list( $this->matched_rule, $this->matched_query ) = $result;
 
-						if ( $wp_rewrite->use_verbose_page_rules && preg_match( '/pagename=\$([^&\[]+)\[([0-9]+)\]/', $query, $varmatch ) ) {
-							// this is a verbose page match, lets check to be sure about it
-							if ( ! get_page_by_path( ${$varmatch[1]}[$varmatch[2]] ) )
-						 		continue;
-						}
-
-						// Got a match.
-						$this->matched_rule = $match;
-						break;
-					}
-				}
-			}
-
-			if ( isset( $this->matched_rule ) ) {
-				// Trim the query of everything up to the '?'.
-				$query = preg_replace("!^.+\?!", '', $query);
-
-				// Substitute the substring matches into the query.
-				$query = addslashes(WP_MatchesMapRegex::apply($query, $matches));
-
-				$this->matched_query = $query;
-
-				// Parse the query.
-				parse_str($query, $perma_query_vars);
+				parse_str( $this->matched_query, $perma_query_vars );
 
 				// If we're processing a 404 request, clear the error var
 				// since we found something.
