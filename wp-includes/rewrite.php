@@ -1857,6 +1857,7 @@ class WP_Rewrite {
 	 * @param bool $hard Whether to update .htaccess (hard flush) or just update rewrite_rules option (soft flush). Default is true (hard).
 	 */
 	function flush_rules($hard = true) {
+		do_action( 'pre_flush_rewrite_rules', $hard );
 		delete_option('rewrite_rules');
 		$this->wp_rewrite_rules();
 		if ( $hard && function_exists('save_mod_rewrite_rules') )
