@@ -292,7 +292,7 @@ function is_taxonomy_hierarchical($taxonomy) {
  * @param array|string $args See above description for the two keys values.
  */
 function register_taxonomy( $taxonomy, $object_type, $args = array() ) {
-	global $wp_taxonomies, $wp_rewrite, $wp;
+	global $wp_taxonomies, $wp;
 
 	if ( ! is_array($wp_taxonomies) )
 		$wp_taxonomies = array();
@@ -316,22 +316,6 @@ function register_taxonomy( $taxonomy, $object_type, $args = array() ) {
 			$args['query_var'] = $taxonomy;
 		$args['query_var'] = sanitize_title_with_dashes($args['query_var']);
 		$wp->add_query_var($args['query_var']);
-	}
-
-	if ( false !== $args['rewrite'] && '' != get_option('permalink_structure') ) {
-		$args['rewrite'] = wp_parse_args($args['rewrite'], array(
-			'slug' => sanitize_title_with_dashes($taxonomy),
-			'with_front' => true,
-			'hierarchical' => false
-		));
-
-		if ( $args['hierarchical'] && $args['rewrite']['hierarchical'] )
-			$tag = '(.+?)';
-		else
-			$tag = '([^/]+)';
-
-		$wp_rewrite->add_rewrite_tag("%$taxonomy%", $tag, $args['query_var'] ? "{$args['query_var']}=" : "taxonomy=$taxonomy&term=");
-		$wp_rewrite->add_permastruct($taxonomy, "{$args['rewrite']['slug']}/%$taxonomy%", $args['rewrite']['with_front']);
 	}
 
 	if ( is_null($args['show_ui']) )
@@ -364,6 +348,32 @@ function register_taxonomy( $taxonomy, $object_type, $args = array() ) {
 	// register callback handling for metabox
  	add_filter('wp_ajax_add-' . $taxonomy, '_wp_ajax_add_hierarchical_term');
 }
+
+function _taxonomy_rewrite_rules() {
+	global $wp_rewrite;
+
+	if ( '' == get_option('permalink_structure') )
+		return;
+
+	foreach ( get_taxonomies( array( 'rewrite' => false ), 'objects', 'not' ) as $taxonomy => $args ) {
+		$args = get_object_vars( $args );
+
+		$args['rewrite'] = wp_parse_args($args['rewrite'], array(
+			'slug' => sanitize_title_with_dashes($taxonomy),
+			'with_front' => true,
+			'hierarchical' => false
+		));
+
+		if ( $args['hierarchical'] && $args['rewrite']['hierarchical'] )
+			$tag = '(.+?)';
+		else
+			$tag = '([^/]+)';
+
+		$wp_rewrite->add_rewrite_tag("%$taxonomy%", $tag, $args['query_var'] ? "{$args['query_var']}=" : "taxonomy=$taxonomy&term=");
+		$wp_rewrite->add_permastruct($taxonomy, "{$args['rewrite']['slug']}/%$taxonomy%", $args['rewrite']['with_front']);
+	}
+}
+add_action( 'pre_flush_rewrite_rules', '_taxonomy_rewrite_rules', 9 );
 
 /**
  * Builds an object with all taxonomy labels out of a taxonomy object
