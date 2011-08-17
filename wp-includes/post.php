@@ -908,7 +908,7 @@ function get_post_types( $args = array(), $output = 'names', $operator = 'and' )
  * @return object|WP_Error the registered post type object, or an error object
  */
 function register_post_type($post_type, $args = array()) {
-	global $wp_post_types, $wp_rewrite, $wp;
+	global $wp_post_types, $wp;
 
 	if ( !is_array($wp_post_types) )
 		$wp_post_types = array();
@@ -985,7 +985,30 @@ function register_post_type($post_type, $args = array()) {
 		$wp->add_query_var($args->query_var);
 	}
 
-	if ( false !== $args->rewrite && ( is_admin() || '' != get_option('permalink_structure') ) ) {
+	if ( $args->register_meta_box_cb )
+		add_action('add_meta_boxes_' . $post_type, $args->register_meta_box_cb, 10, 1);
+
+	$args->labels = get_post_type_labels( $args );
+	$args->label = $args->labels->name;
+
+	$wp_post_types[$post_type] = $args;
+
+	add_action( 'future_' . $post_type, '_future_post_hook', 5, 2 );
+
+	foreach ( $args->taxonomies as $taxonomy ) {
+		register_taxonomy_for_object_type( $taxonomy, $post_type );
+	}
+
+	return $args;
+}
+
+function _post_type_rewrite_rules() {
+	global $wp_rewrite;
+
+	if ( '' == get_option('permalink_structure') )
+		return;
+
+	foreach ( get_post_types( array( 'rewrite' => false ), 'objects', 'not' ) as $post_type => $args ) {
 		if ( ! is_array( $args->rewrite ) )
 			$args->rewrite = array();
 		if ( empty( $args->rewrite['slug'] ) )
@@ -1021,23 +1044,8 @@ function register_post_type($post_type, $args = array()) {
 
 		$wp_rewrite->add_permastruct($post_type, "{$args->rewrite['slug']}/%$post_type%", $args->rewrite['with_front'], $args->permalink_epmask);
 	}
-
-	if ( $args->register_meta_box_cb )
-		add_action('add_meta_boxes_' . $post_type, $args->register_meta_box_cb, 10, 1);
-
-	$args->labels = get_post_type_labels( $args );
-	$args->label = $args->labels->name;
-
-	$wp_post_types[$post_type] = $args;
-
-	add_action( 'future_' . $post_type, '_future_post_hook', 5, 2 );
-
-	foreach ( $args->taxonomies as $taxonomy ) {
-		register_taxonomy_for_object_type( $taxonomy, $post_type );
-	}
-
-	return $args;
 }
+add_action( 'pre_flush_rewrite_rules', '_post_type_rewrite_rules', 9 );
 
 /**
  * Builds an object with all post type capabilities out of a post type object
