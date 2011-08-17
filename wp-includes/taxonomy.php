@@ -356,21 +356,19 @@ function _taxonomy_rewrite_rules() {
 		return;
 
 	foreach ( get_taxonomies( array( 'rewrite' => false ), 'objects', 'not' ) as $taxonomy => $args ) {
-		$args = get_object_vars( $args );
-
-		$args['rewrite'] = wp_parse_args($args['rewrite'], array(
-			'slug' => sanitize_title_with_dashes($taxonomy),
+		$args->rewrite = wp_parse_args( $args->rewrite, array(
+			'slug' => sanitize_title_with_dashes( $taxonomy ),
 			'with_front' => true,
 			'hierarchical' => false
-		));
+		) );
 
-		if ( $args['hierarchical'] && $args['rewrite']['hierarchical'] )
+		if ( $args->hierarchical && $args->rewrite['hierarchical'] )
 			$tag = '(.+?)';
 		else
 			$tag = '([^/]+)';
 
-		$wp_rewrite->add_rewrite_tag("%$taxonomy%", $tag, $args['query_var'] ? "{$args['query_var']}=" : "taxonomy=$taxonomy&term=");
-		$wp_rewrite->add_permastruct($taxonomy, "{$args['rewrite']['slug']}/%$taxonomy%", $args['rewrite']['with_front']);
+		$wp_rewrite->add_rewrite_tag( "%$taxonomy%", $tag, $args->query_var ? "{$args->query_var}=" : "taxonomy=$taxonomy&term=" );
+		$wp_rewrite->add_permastruct( $taxonomy, $args->rewrite['slug'] . "/%$taxonomy%", $args->rewrite['with_front'] );
 	}
 }
 add_action( 'pre_flush_rewrite_rules', '_taxonomy_rewrite_rules', 9 );
