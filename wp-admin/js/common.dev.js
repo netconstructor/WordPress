@@ -182,12 +182,21 @@ showNotice = {
 };
 
 screenMeta = {
+	element: null,
+	toggles: null,
+	page:    null,
+	padding: null,
+	top:     null,
 	links: {
-		'screen-options-link-wrap': 'screen-options-wrap',
-		'contextual-help-link-wrap': 'contextual-help-wrap'
+		'wp-admin-bar-screen-options': 'screen-options-wrap',
+		'wp-admin-bar-help': 'contextual-help-wrap'
 	},
 	init: function() {
-		$('.screen-meta-toggle').click( screenMeta.toggleEvent );
+		screenMeta.element = $('#screen-meta');
+		screenMeta.toggles = $('.screen-meta-toggle');
+		screenMeta.page    = $('#wpcontent, #adminmenu');
+
+		screenMeta.toggles.click( screenMeta.toggleEvent );
 	},
 	toggleEvent: function( e ) {
 		var panel;
@@ -205,17 +214,23 @@ screenMeta = {
 			screenMeta.open( panel, $(this) );
 	},
 	open: function( panel, link ) {
-		$('.screen-meta-toggle').not( link ).css('visibility', 'hidden');
+		// Open selected panels
+		link.addClass('selected');
 
-		panel.slideDown( 'fast', function() {
-			link.addClass('screen-meta-active');
-		});
+		screenMeta.padding = parseInt( screenMeta.page.css('paddingTop'), 10 );
+		screenMeta.top     = parseInt( screenMeta.element.css('top'), 10 );
+
+		panel.show();
+
+		screenMeta.element.animate({ top: 0 }, 'fast');
+		screenMeta.page.animate({ paddingTop: screenMeta.padding + screenMeta.element.outerHeight() }, 'fast');
 	},
 	close: function( panel, link ) {
-		panel.slideUp( 'fast', function() {
-			link.removeClass('screen-meta-active');
-			$('.screen-meta-toggle').css('visibility', '');
+		screenMeta.element.animate({ top: screenMeta.top }, 'fast', function() {
+			panel.hide();
+			link.removeClass('selected');
 		});
+		screenMeta.page.animate({ paddingTop: screenMeta.padding }, 'fast');
 	}
 };
 
