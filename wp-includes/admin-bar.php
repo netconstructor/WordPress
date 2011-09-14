@@ -170,6 +170,15 @@ function wp_admin_bar_my_sites_menu( $wp_admin_bar ) {
 		'href'  => $url,
 	) );
 
+	if ( is_multisite() && is_super_admin() && !is_network_admin() ) {
+		$wp_admin_bar->add_menu( array(
+			'parent' => 'my-blogs',
+			'id'     => 'network-admin',
+			'title'  => __('Network Admin'),
+			'href'   => network_admin_url()
+		) );
+	}
+
 	$blue_wp_logo_url = includes_url('images/wpmini-blue.png');
 
 	foreach ( (array) $wp_admin_bar->user->blogs as $blog ) {
