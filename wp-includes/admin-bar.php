@@ -174,7 +174,7 @@ function wp_admin_bar_my_sites_menu( $wp_admin_bar ) {
 
 	foreach ( (array) $wp_admin_bar->user->blogs as $blog ) {
 		// Skip the current blog.
-		if ( $blog === $wp_admin_bar->user->active_blog )
+		if ( $blog->userblog_id == $wp_admin_bar->user->active_blog->blog_id )
 			continue;
 
 		// @todo Replace with some favicon lookup.
@@ -193,14 +193,6 @@ function wp_admin_bar_my_sites_menu( $wp_admin_bar ) {
 
 		$wp_admin_bar->add_menu( array( 'parent' => 'blog-' . $blog->userblog_id, 'id' => 'blog-' . $blog->userblog_id . '-v', 'title' => __( 'Visit Site' ), 'href' => get_home_url($blog->userblog_id) ) );
 	}
-
-	// Add WordPress.org link
-	$wp_admin_bar->add_menu( array(
-		'parent' => 'my-blogs',
-		'id'     => 'wporg',
-		'title'  => __('WordPress.org'),
-		'href'   => 'http://wordpress.org',
-	) );
 }
 
 /**
