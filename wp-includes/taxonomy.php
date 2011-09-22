@@ -34,6 +34,7 @@ function create_initial_taxonomies() {
 	 	'hierarchical' => false,
 		'update_count_callback' => '_update_post_term_count',
 		'query_var' => 'tag',
+		'query_var_id' => 'tag_id',
 		'rewrite' => did_action( 'init' ) ? array(
 					'slug' => get_option('tag_base') ? get_option('tag_base') : 'tag',
 					'with_front' => ( get_option('tag_base') && ! $wp_rewrite->using_index_permalinks() ) ? false : true ) : false,
@@ -266,6 +267,8 @@ function is_taxonomy_hierarchical($taxonomy) {
  * query_var - false to prevent queries, or string to customize query var
  * (?$query_var=$term); default will use $taxonomy as query var.
  *
+ * query_var_id - string used to query terms by id, instead of by slug.
+ *
  * public - If the taxonomy should be publicly queryable; //@TODO not implemented.
  * defaults to true.
  *
@@ -301,6 +304,7 @@ function register_taxonomy( $taxonomy, $object_type, $args = array() ) {
 						'update_count_callback' => '',
 						'rewrite' => true,
 						'query_var' => $taxonomy,
+						'query_var_id' => false,
 						'public' => true,
 						'show_ui' => null,
 						'show_tagcloud' => null,
@@ -316,6 +320,11 @@ function register_taxonomy( $taxonomy, $object_type, $args = array() ) {
 			$args['query_var'] = $taxonomy;
 		$args['query_var'] = sanitize_title_with_dashes($args['query_var']);
 		$wp->add_query_var($args['query_var']);
+	}
+
+	if ( false !== $args['query_var_id'] && !empty($wp) ) {
+		$args['query_var_id'] = sanitize_title_with_dashes($args['query_var_id']);
+		$wp->add_query_var($args['query_var_id']);
 	}
 
 	if ( false !== $args['rewrite'] && '' != get_option('permalink_structure') ) {

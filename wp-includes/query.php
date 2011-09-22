@@ -1702,7 +1702,14 @@ class WP_Query {
 			if ( 'post_tag' == $taxonomy )
 				continue;	// Handled further down in the $q['tag'] block
 
-			if ( $t->query_var && !empty( $q[$t->query_var] ) ) {
+			if ( $t->query_var_id && !empty( $q[$t->query_var_id] ) ) {
+				$q[$t->query_var_id] = absint( $q[$t->query_var_id] );
+				$tax_query[] = array(
+					'taxonomy' => $taxonomy,
+					'terms' => $q[$t->query_var_id]
+				);
+			}
+			elseif ( $t->query_var && !empty( $q[$t->query_var] ) ) {
 				$tax_query_defaults = array(
 					'taxonomy' => $taxonomy,
 					'field' => 'slug',
@@ -1801,14 +1808,6 @@ class WP_Query {
 				$q['tag'] = sanitize_term_field('slug', $q['tag'], 0, 'post_tag', 'db');
 				$q['tag_slug__in'][] = $q['tag'];
 			}
-		}
-
-		if ( !empty($q['tag_id']) ) {
-			$q['tag_id'] = absint( $q['tag_id'] );
-			$tax_query[] = array(
-				'taxonomy' => 'post_tag',
-				'terms' => $q['tag_id']
-			);
 		}
 
 		if ( !empty($q['tag__in']) ) {
