@@ -1699,9 +1699,6 @@ class WP_Query {
 		}
 
 		foreach ( $GLOBALS['wp_taxonomies'] as $taxonomy => $t ) {
-			if ( 'post_tag' == $taxonomy )
-				continue;	// Handled further down in the $q['tag'] block
-
 			if ( $t->query_var_id && !empty( $q[$t->query_var_id] ) ) {
 				$q[$t->query_var_id] = absint( $q[$t->query_var_id] );
 				$tax_query[] = array(
@@ -1709,7 +1706,7 @@ class WP_Query {
 					'terms' => $q[$t->query_var_id]
 				);
 			}
-			elseif ( $t->query_var && !empty( $q[$t->query_var] ) ) {
+			elseif ( 'post_tag' != $taxonomy && $t->query_var && !empty( $q[$t->query_var] ) ) {
 				$tax_query_defaults = array(
 					'taxonomy' => $taxonomy,
 					'field' => 'slug',
